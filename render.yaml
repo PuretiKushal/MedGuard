@@ -2,6 +2,8 @@ services:
   - type: web
     name: medguard-backend
     runtime: python
+    pythonVersion: "3.11.9"
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -21,6 +23,10 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
 
 databases:
   - name: medguard-db
