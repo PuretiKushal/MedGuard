@@ -1,4 +1,4 @@
-fastapi==0.111.0
+fastapi==0.115.0
 uvicorn==0.29.0
 sqlalchemy==2.0.30
 psycopg2-binary==2.9.9
@@ -9,10 +9,9 @@ Pillow==11.2.1
 python-multipart==0.0.9
 APScheduler==3.10.4
 twilio==9.1.0
-reportlab==4.1.0
-pydantic==2.11.5
-pydantic-settings==2.2.1
-geoalchemy2==0.15.1
-shapely==2.0.6
+reportlab==4.2.5
+pydantic==2.10.6
+pydantic-settings==2.3.4
+geoalchemy2==0.15.2
+shapely==2.1.0
 setuptools==75.8.2
-pydantic-core==2.18.4
