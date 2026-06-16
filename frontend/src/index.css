@@ -38,7 +38,7 @@
            bg-expired-bg text-expired border border-expired/30;
   }
   .stat-card {
-    @apply bg-surface rounded-lg border border-border p-5 animate-fade-in;
+    @apply bg-surface rounded-lg border border-border p-5 animate-fade_in;
   }
   .data-table {
     @apply w-full text-sm border-collapse;
