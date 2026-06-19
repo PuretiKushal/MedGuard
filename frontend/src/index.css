@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Public+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,87 +6,115 @@
 @layer base {
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background-color: #0D1117;
-    color: #F0F4F8;
-    font-family: 'Inter', sans-serif;
+    background-color: #FAF7F0;
+    color: #1C2620;
+    font-family: 'Public Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0D1117; }
-  ::-webkit-scrollbar-thumb { background: #2E3548; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #4E5668; }
+  ::-webkit-scrollbar-track { background: #FAF7F0; }
+  ::-webkit-scrollbar-thumb { background: #E8E2D3; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #5B6B62; }
 }
 
 @layer components {
-  .badge-critical {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-semibold
-           bg-critical-bg text-critical border border-critical/30;
+  /* ===== Stamp-style status badges (signature element) ===== */
+  .stamp-critical {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-[3px] text-[10.5px] font-mono font-semibold
+           uppercase tracking-wide border-[1.5px] border-red text-red;
+    transform: rotate(-2deg);
   }
-  .badge-critical .pulse-dot {
-    @apply w-1.5 h-1.5 rounded-full bg-critical animate-pulse_critical;
+  .stamp-expired {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-[3px] text-[10.5px] font-mono font-semibold
+           uppercase tracking-wide border-[1.5px] border-ink-faded text-ink-faded;
+    transform: rotate(-2deg);
   }
-  .badge-warning {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-semibold
-           bg-warning-bg text-warning border border-warning/30;
+  .stamp-warning {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-[3px] text-[10.5px] font-mono font-semibold
+           uppercase tracking-wide bg-amber-light text-amber;
   }
-  .badge-safe {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-semibold
-           bg-safe-bg text-safe border border-safe/30;
+  .stamp-safe {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-[3px] text-[10.5px] font-mono font-semibold
+           uppercase tracking-wide bg-green-light text-green;
   }
-  .badge-expired {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-semibold
-           bg-expired-bg text-expired border border-expired/30;
+  .stamp-disposed {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-[3px] text-[10.5px] font-mono font-semibold
+           uppercase tracking-wide bg-line text-ink-faded;
   }
-  .stat-card {
-    @apply bg-surface rounded-lg border border-border p-5 animate-fade_in;
+  .stamp-unverified {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-[3px] text-[10px] font-mono font-medium
+           uppercase tracking-wide bg-amber-light text-amber;
   }
+
+  /* ===== Labels ===== */
+  .label {
+    @apply font-mono text-[11px] uppercase tracking-wider text-ink-faded;
+  }
+
+  /* ===== Cards & registers ===== */
+  .card {
+    @apply bg-white border border-line rounded-[10px];
+  }
+  .register-row {
+    @apply flex items-center justify-between px-5 py-3.5 border-b border-line last:border-0 hover:bg-paper transition-colors;
+  }
+  .kpi-card {
+    @apply bg-white border border-line rounded-[10px] p-[18px_20px] relative overflow-hidden pl-6;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 14px; bottom: 14px; width: 3px;
+    border-radius: 0 2px 2px 0;
+  }
+  .kpi-total::before { background: #5B6B62; }
+  .kpi-critical::before { background: #B23A3A; }
+  .kpi-warning::before { background: #C98A2E; }
+  .kpi-safe::before { background: #1F6F50; }
+
+  /* ===== Buttons ===== */
+  .btn {
+    @apply font-sans font-semibold text-sm px-5 py-2.5 rounded-[7px] border-[1.5px] cursor-pointer transition-colors duration-150 inline-flex items-center justify-center gap-1.5;
+  }
+  .btn-fill {
+    @apply btn bg-green text-white border-green hover:bg-[#185c41];
+  }
+  .btn-outline {
+    @apply btn bg-transparent text-ink border-line hover:border-ink-faded;
+  }
+  .btn-danger {
+    @apply btn bg-red-light text-red border-red/30 hover:bg-red hover:text-white;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-faded border-transparent hover:text-ink px-2;
+  }
+
+  /* ===== Inputs ===== */
+  .input-field {
+    @apply w-full bg-white border border-line rounded-[7px] px-3.5 py-2.5 text-sm font-mono
+           text-ink placeholder-ink-faded/60 focus:outline-none focus:border-green
+           transition-colors duration-150;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-6 py-2.5 text-[13.5px] font-medium text-ink-faded
+           hover:bg-paper transition-colors duration-150 cursor-pointer;
+  }
+  .sidebar-link.active {
+    @apply text-green bg-green-light border-r-2 border-green;
+  }
+
   .data-table {
     @apply w-full text-sm border-collapse;
   }
-  .data-table thead tr {
-    @apply border-b border-border;
-  }
   .data-table thead th {
-    @apply text-left py-3 px-4 text-text-secondary font-mono text-xs uppercase tracking-wider font-medium;
+    @apply text-left py-3 px-4 text-ink-faded font-mono text-[11px] uppercase tracking-wider font-medium border-b border-line;
   }
   .data-table tbody tr {
-    @apply border-b border-border/50 hover:bg-surface-2 transition-colors duration-100;
+    @apply border-b border-line/70 hover:bg-paper transition-colors duration-100;
   }
   .data-table tbody td {
-    @apply py-3 px-4 font-mono text-xs text-text-primary;
-  }
-  .sidebar-link {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium
-           text-text-secondary hover:text-text-primary hover:bg-surface-2
-           transition-all duration-150 cursor-pointer;
-  }
-  .sidebar-link.active {
-    @apply text-accent bg-safe-bg border border-safe/20;
-  }
-  .btn-primary {
-    @apply px-4 py-2 bg-accent text-base rounded-md text-sm font-semibold
-           hover:bg-safe transition-colors duration-150 disabled:opacity-40;
-  }
-  .btn-ghost {
-    @apply px-4 py-2 border border-border text-text-secondary rounded-md text-sm font-medium
-           hover:border-accent hover:text-accent transition-colors duration-150;
-  }
-  .btn-danger {
-    @apply px-4 py-2 bg-critical-bg border border-critical/30 text-critical rounded-md text-sm font-medium
-           hover:bg-critical hover:text-white transition-colors duration-150;
-  }
-  .input-field {
-    @apply w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm font-mono
-           text-text-primary placeholder-text-muted focus:outline-none focus:border-accent
-           transition-colors duration-150;
-  }
-  .card {
-    @apply bg-surface rounded-lg border border-border;
-  }
-  .card-header {
-    @apply flex items-center justify-between px-5 py-4 border-b border-border;
-  }
-  .section-label {
-    @apply text-xs font-mono font-semibold text-text-muted uppercase tracking-widest;
+    @apply py-3 px-4 font-mono text-[12.5px] text-ink;
   }
 }
