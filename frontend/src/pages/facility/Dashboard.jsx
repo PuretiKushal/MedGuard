@@ -1,23 +1,14 @@
 import { useEffect, useState } from "react";
-import { getFacilityStats, getAlerts } from "../../utils/api";
+import { getFacilityStats, getAlerts, getFacility } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
-import StatusBadge from "../../components/StatusBadge";
+import StampBadge from "../../components/StampBadge";
 import { Link } from "react-router-dom";
-
-function StatCard({ label, value, color, sub }) {
-  return (
-    <div className={`stat-card border-t-2 ${color}`}>
-      <div className="text-xs font-mono text-text-muted uppercase tracking-wider mb-2">{label}</div>
-      <div className="text-3xl font-mono font-bold text-text-primary">{value ?? "—"}</div>
-      {sub && <div className="text-xs text-text-muted mt-1">{sub}</div>}
-    </div>
-  );
-}
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [alerts, setAlerts] = useState(null);
+  const [facility, setFacility] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,139 +16,97 @@ export default function Dashboard() {
     Promise.all([
       getFacilityStats(user.facility_id),
       getAlerts(user.facility_id),
-    ]).then(([s, a]) => {
-      setStats(s.data);
-      setAlerts(a.data);
+      getFacility(user.facility_id),
+    ]).then(([s, a, f]) => {
+      setStats(s.data); setAlerts(a.data); setFacility(f.data);
     }).finally(() => setLoading(false));
   }, [user]);
 
-  const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-  if (loading) return (
-    <div className="p-8 text-text-muted font-mono text-sm animate-pulse">Loading dashboard...</div>
-  );
+  if (loading) return <div className="p-8 text-ink-faded font-mono text-sm">Loading dashboard...</div>;
 
   return (
-    <div className="p-8 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+    <div className="p-8">
+      <div className="flex items-start justify-between mb-7">
         <div>
-          <div className="section-label mb-1">Dashboard</div>
-          <h1 className="text-xl font-semibold text-text-primary">Good morning, {user?.name?.split(" ")[0]}</h1>
-          <div className="text-xs font-mono text-text-muted mt-1">{today}</div>
+          <div className="label mb-1">Dashboard</div>
+          <h1 className="font-serif font-semibold text-2xl text-ink">Good morning, {user?.name?.split(" ")[0]}</h1>
+          <div className="text-sm text-ink-faded mt-1">{facility?.name} · {today}</div>
         </div>
-        <Link to="/facility/alerts" className="btn-ghost text-xs">
-          View full report →
-        </Link>
+        <Link to="/facility/alerts" className="btn-outline text-xs">View full report →</Link>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Medicines" value={stats?.total} color="border-border" sub="Active inventory" />
-        <StatCard label="Critical" value={stats?.critical} color="border-critical" sub="Act within 30 days" />
-        <StatCard label="Warning" value={stats?.warning} color="border-warning" sub="30–60 days remaining" />
-        <StatCard label="Expired" value={stats?.expired} color="border-expired" sub="Quarantine required" />
+      {facility?.verification_status === "pending_review" && (
+        <div className="mb-6 px-5 py-4 bg-amber-light border border-amber/30 rounded-[10px] flex items-start justify-between">
+          <div>
+            <div className="font-semibold text-sm text-ink mb-1">Your facility is pending verification</div>
+            <div className="text-xs text-ink-faded">{facility.verification_reason || "Upload a proof document to complete verification."}</div>
+          </div>
+          <Link to="/facility/profile" className="text-xs font-mono text-amber border-b border-amber pb-0.5 whitespace-nowrap ml-4">Upload proof →</Link>
+        </div>
+      )}
+
+      <div className="grid grid-cols-4 gap-3.5 mb-7">
+        <div className="kpi-card kpi-total"><div className="label mb-2">Total stock</div><div className="font-serif font-semibold text-3xl text-ink">{stats?.total}</div></div>
+        <div className="kpi-card kpi-critical"><div className="label mb-2">Critical</div><div className="font-serif font-semibold text-3xl text-red">{stats?.critical}</div></div>
+        <div className="kpi-card kpi-warning"><div className="label mb-2">Warning</div><div className="font-serif font-semibold text-3xl text-amber">{stats?.warning}</div></div>
+        <div className="kpi-card kpi-safe"><div className="label mb-2">Pending disposal</div><div className="font-serif font-semibold text-3xl text-ink">{stats?.pending_disposal}</div></div>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        {/* Critical alerts */}
         <div className="col-span-2 card">
-          <div className="card-header">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-line">
             <div>
-              <div className="section-label">Priority Alerts</div>
-              <div className="text-sm font-medium text-text-primary mt-0.5">Medicines requiring immediate action</div>
+              <div className="label">Today's register</div>
+              <div className="text-sm font-semibold text-ink mt-0.5">Items needing attention</div>
             </div>
-            {alerts?.total_at_risk > 0 && (
-              <span className="badge-critical"><span className="pulse-dot" />{alerts.total_at_risk} at risk</span>
-            )}
+            {alerts?.total_at_risk > 0 && <span className="stamp-critical">{alerts.total_at_risk} at risk</span>}
           </div>
-          <div className="divide-y divide-border/50">
+          <div>
             {[...(alerts?.critical || []), ...(alerts?.expired || [])].length === 0 ? (
-              <div className="px-5 py-8 text-center text-text-muted font-mono text-sm">
-                ✓ No critical alerts today
-              </div>
+              <div className="px-5 py-8 text-center text-ink-faded font-mono text-sm">✓ No critical alerts today</div>
             ) : (
               [...(alerts?.critical || []), ...(alerts?.expired || [])].slice(0, 6).map((m) => (
-                <div key={m.id} className="px-5 py-3.5 flex items-center justify-between hover:bg-surface-2 transition-colors">
+                <div key={m.id} className="register-row">
                   <div>
-                    <div className="text-sm font-mono text-text-primary">{m.name}</div>
-                    <div className="text-xs text-text-muted mt-0.5">
-                      Qty: {m.quantity} · Batch: {m.batch_number || "—"} · Exp: {m.expiry_date}
-                    </div>
+                    <div className="text-sm font-mono text-ink">{m.name}</div>
+                    <div className="text-xs text-ink-faded mt-0.5">Qty: {m.quantity} · Batch: {m.batch_number || "—"} · Exp: {m.expiry_date}</div>
                   </div>
-                  <StatusBadge status={m.expiry_status} days={m.days_remaining} />
+                  <StampBadge status={m.expiry_status} disposalStatus={m.disposal_status} days={m.days_remaining} />
                 </div>
               ))
             )}
           </div>
-          {(alerts?.critical?.length + alerts?.expired?.length) > 6 && (
-            <div className="px-5 py-3 border-t border-border">
-              <Link to="/facility/alerts" className="text-xs font-mono text-accent hover:underline">
-                View all {alerts.critical.length + alerts.expired.length} alerts →
-              </Link>
-            </div>
-          )}
         </div>
 
-        {/* Side panel */}
         <div className="space-y-4">
-          {/* Inventory health */}
-          <div className="card">
-            <div className="card-header">
-              <div className="section-label">Inventory Health</div>
-            </div>
-            <div className="p-4 space-y-3">
+          <div className="card p-4">
+            <div className="label mb-3">Inventory health</div>
+            <div className="space-y-3">
               {[
-                { label: "Safe", value: stats?.safe, total: stats?.total, color: "bg-safe" },
-                { label: "Warning", value: stats?.warning, total: stats?.total, color: "bg-warning" },
-                { label: "Critical", value: stats?.critical, total: stats?.total, color: "bg-critical" },
-                { label: "Expired", value: stats?.expired, total: stats?.total, color: "bg-expired" },
+                { label: "Safe", value: stats?.safe, color: "bg-green" },
+                { label: "Warning", value: stats?.warning, color: "bg-amber" },
+                { label: "Critical", value: stats?.critical, color: "bg-red" },
+                { label: "Disposed", value: stats?.disposed, color: "bg-ink-faded" },
               ].map((row) => (
                 <div key={row.label}>
                   <div className="flex justify-between text-xs font-mono mb-1">
-                    <span className="text-text-secondary">{row.label}</span>
-                    <span className="text-text-muted">{row.value}</span>
+                    <span className="text-ink-faded">{row.label}</span><span className="text-ink-faded">{row.value}</span>
                   </div>
-                  <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${row.color} transition-all duration-500`}
-                      style={{ width: `${row.total ? (row.value / row.total) * 100 : 0}%` }}
-                    />
+                  <div className="h-1.5 bg-line rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${row.color}`} style={{ width: `${stats?.total ? (row.value / stats.total) * 100 : 0}%` }} />
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Warning medicines */}
-          <div className="card">
-            <div className="card-header">
-              <div className="section-label">Upcoming Warnings</div>
-            </div>
-            <div className="divide-y divide-border/50">
-              {(alerts?.warning || []).slice(0, 4).map((m) => (
-                <div key={m.id} className="px-4 py-3">
-                  <div className="text-xs font-mono text-text-primary truncate">{m.name}</div>
-                  <div className="text-xs text-warning font-mono mt-0.5">{m.days_remaining}d remaining</div>
-                </div>
-              ))}
-              {(alerts?.warning || []).length === 0 && (
-                <div className="px-4 py-4 text-xs text-text-muted font-mono">No warnings</div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div className="card p-4 space-y-2">
-            <div className="section-label mb-3">Quick Actions</div>
-            <Link to="/facility/invoice" className="btn-primary w-full text-center block text-xs">
-              ↑ Upload Invoice
-            </Link>
-            <Link to="/facility/alerts" className="btn-ghost w-full text-center block text-xs">
-              ↓ Download Report
-            </Link>
+          <div className="card p-4 space-y-2.5">
+            <div className="label mb-2">Quick actions</div>
+            <Link to="/facility/invoice" className="btn-fill w-full justify-center text-xs">↑ Upload invoice</Link>
+            <Link to="/facility/inventory" className="btn-outline w-full justify-center text-xs">+ Add or deduct stock</Link>
+            <Link to="/facility/alerts" className="btn-outline w-full justify-center text-xs">↓ Download report</Link>
           </div>
         </div>
       </div>
