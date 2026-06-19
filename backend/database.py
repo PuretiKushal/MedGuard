@@ -47,6 +47,10 @@ class Facility(Base):
     email = Column(String(100))
     admin_whatsapp = Column(String(20))
     is_free_medicines = Column(Boolean, default=False)
+    # NEW — verification fields
+    verification_status = Column(String(20), default="verified")  # verified | pending_review | unverified
+    verification_reason = Column(Text, nullable=True)
+    proof_document_path = Column(String(500), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     medicines = relationship("Medicine", back_populates="facility")
     users = relationship("User", back_populates="facility")
@@ -69,6 +73,10 @@ class Medicine(Base):
     days_remaining = Column(Integer)
     is_cold_chain = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    # NEW — disposal tracking
+    disposal_status = Column(String(20), default="active")  # active | pending_disposal | disposed
+    disposed_date = Column(DateTime, nullable=True)
+    disposed_by = Column(String(100), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     facility = relationship("Facility", back_populates="medicines")
@@ -116,3 +124,10 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
     facility = relationship("Facility", back_populates="users")
+
+# NEW — search logging for "most searched this week"
+class SearchLog(Base):
+    __tablename__ = "search_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    query = Column(String(200), nullable=False)
+    searched_at = Column(DateTime, server_default=func.now())
