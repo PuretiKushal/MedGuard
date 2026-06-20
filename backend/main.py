@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 from contextlib import asynccontextmanager
 import uvicorn
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = "/run/current-system/sw/bin/tesseract"
 
 from database import engine, Base
 from routers import facilities, medicines, invoices, alerts, patient, auth

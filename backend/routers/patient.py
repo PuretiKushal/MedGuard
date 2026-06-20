@@ -5,6 +5,8 @@ from database import get_db, Medicine, Facility, PatientNotification, ExpiryStat
 from pydantic import BaseModel
 import math
 import pytesseract
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = "/run/current-system/sw/bin/tesseract"
 from PIL import Image
 import io
 
