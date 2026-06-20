@@ -9,6 +9,17 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = "/run/current-system/sw/bin/tesseract"
 from PIL import Image
 import io
+import subprocess
+import os
+
+# Find tesseract automatically
+try:
+    result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
+    tesseract_path = result.stdout.strip()
+    if tesseract_path:
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+except:
+    pass
 
 router = APIRouter()
 

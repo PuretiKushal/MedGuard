@@ -4,6 +4,8 @@ from database import get_db, Invoice, Medicine
 from scheduler import calculate_expiry_status
 from ai_services import normalize_medicine_name
 import pytesseract
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = "/run/current-system/sw/bin/tesseract"
 from PIL import Image
 import pdf2image
 import io
@@ -12,6 +14,17 @@ import os
 import tempfile
 from datetime import datetime, date
 from typing import List
+import subprocess
+import os
+
+# Find tesseract automatically
+try:
+    result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
+    tesseract_path = result.stdout.strip()
+    if tesseract_path:
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+except:
+    pass
 
 router = APIRouter()
 
