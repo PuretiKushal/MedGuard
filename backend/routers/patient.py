@@ -4,11 +4,7 @@ from sqlalchemy import func, or_, desc
 from database import get_db, Medicine, Facility, PatientNotification, ExpiryStatus, SearchLog
 from pydantic import BaseModel
 import math
-import pytesseract
-import pytesseract
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
-from PIL import Image
-import io
+
 
 
 router = APIRouter()
@@ -103,12 +99,11 @@ def get_substitutes(name, generic_name, lat, lng, radius_km, db):
             subs.append({"medicine_name": m.name, "generic_name": m.generic_name, "facility_name": facility.name, "distance_km": round(distance, 2), "quantity": m.quantity, "mrp": m.mrp, "is_free": facility.is_free_medicines})
     return subs[:5]
 
+from fastapi import Form
+
 @router.post("/prescription-scan")
-async def scan_prescription(lat: float = Query(...), lng: float = Query(...), file: UploadFile = File(...)):
-    contents = await file.read()
-    image = Image.open(io.BytesIO(contents))
-    text = pytesseract.image_to_string(image)
-    lines = [l.strip() for l in text.split("\n") if len(l.strip()) > 3]
+async def scan_prescription(lat: float = Form(...), lng: float = Form(...), raw_text: str = Form(...)):
+    lines = [l.strip() for l in raw_text.split("\n") if len(l.strip()) > 3]
     medicine_keywords = ["tab", "cap", "syp", "inj", "mg", "ml", "tablet", "capsule"]
     medicines_found = []
     for line in lines:
@@ -116,7 +111,7 @@ async def scan_prescription(lat: float = Query(...), lng: float = Query(...), fi
             words = line.split()
             if words:
                 medicines_found.append(words[0])
-    return {"raw_text": text, "detected_medicines": medicines_found[:10], "search_lat": lat, "search_lng": lng}
+    return {"raw_text": raw_text, "detected_medicines": medicines_found[:10], "search_lat": lat, "search_lng": lng}
 
 class NotificationRequest(BaseModel):
     medicine_name: str
