@@ -27,7 +27,12 @@ export default function InvoiceUpload() {
         reader.readAsDataURL(file);
       });
 
-      const promptText = "Read this medicine invoice or prescription image and extract all visible text exactly as written, including medicine names, quantities, dates and batch numbers. Return only the raw extracted text, nothing else.";
+      const promptText = `Look at this medicine invoice or prescription image carefully, including any handwritten text.
+For every medicine you can identify, extract these fields: name, generic_name, supplier, quantity, batch_number, expiry_date (format YYYY-MM-DD), manufacturing_date (format YYYY-MM-DD).
+If a field is not visible or not applicable, use "-" instead of guessing randomly.
+If handwriting is unclear, give your best reasonable guess for the field anyway, and add a field "uncertain": true on that specific medicine object if you are not confident.
+Respond ONLY with a valid JSON array of objects, no explanation, no markdown formatting, no code fences. Example shape:
+[{"name":"Paracetamol 650mg","generic_name":"Paracetamol","supplier":"Crocin Corp","quantity":50,"batch_number":"B-PCT992","expiry_date":"2027-10-31","manufacturing_date":"2025-11-30","uncertain":false}]`;
 
       let aiResponse;
       try {
@@ -36,19 +41,48 @@ export default function InvoiceUpload() {
         aiResponse = await window.puter.ai.chat(promptText, dataUrl, { model: "claude-sonnet-4-6" });
       }
 
-      const rawText = typeof aiResponse === "string" ? aiResponse : (aiResponse?.message?.content?.[0]?.text || aiResponse?.text || String(aiResponse) || "");
+      let rawOutput = typeof aiResponse === "string" ? aiResponse : (aiResponse?.message?.content?.[0]?.text || aiResponse?.text || String(aiResponse) || "");
+      rawOutput = rawOutput.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "");
 
+      let parsedMeds = [];
+      try {
+        parsedMeds = JSON.parse(rawOutput);
+        if (!Array.isArray(parsedMeds)) parsedMeds = [];
+      } catch {
+        parsedMeds = [];
+      }
+       
       const fd = new FormData();
-      fd.append("raw_text", rawText);
+      fd.append("structured_medicines", JSON.stringify(parsedMeds));
       fd.append("facility_id", user.facility_id);
       fd.append("invoice_type", invoiceType);
       fd.append("supplier_name", supplier);
-      const res = await uploadInvoice(fd);
-      setEditedMeds(res.data.extracted_medicines || []);
+      await uploadInvoice(fd);
+      
+      setEditedMeds(parsedMeds.map(m => ({
+        name: m.name === "-" ? "" : (m.name || ""),
+        generic_name: m.generic_name === "-" ? "" : (m.generic_name || ""),
+        supplier: m.supplier === "-" ? "" : (m.supplier || ""),
+        quantity: m.quantity === "-" || !m.quantity ? 0 : m.quantity,
+        batch_number: m.batch_number === "-" ? "" : (m.batch_number || ""),
+        expiry_date: m.expiry_date === "-" ? "" : (m.expiry_date || ""),
+        manufacturing_date: m.manufacturing_date === "-" ? "" : (m.manufacturing_date || ""),
+        uncertain: !!m.uncertain,
+      })));
+
+      if (parsedMeds.length === 0) {
+        setError("Couldn't confidently read any medicines from this image. Please add them manually below.");
+      } else {
+        const uncertainCount = parsedMeds.filter(m => m.uncertain).length;
+        if (uncertainCount > 0) {
+          setError(`${uncertainCount} medicine(s) marked for review — handwriting was unclear, please double-check highlighted rows.`);
+        }
+      }
       setStep(1);
     } catch (err) {
       console.error(err);
-      setError("AI reading failed. Please try again or add medicines manually.");
+      setError("AI reading failed. Please try again or add medicines manually below.");
+      setStep(1);
     } finally {
       setLoading(false);
     }
@@ -148,7 +182,7 @@ export default function InvoiceUpload() {
                 {editedMeds.length === 0 ? (
                   <tr><td colSpan={5} className="text-center py-6 text-ink-faded">No medicines extracted — add manually above</td></tr>
                 ) : editedMeds.map((m, i) => (
-                  <tr key={i}>
+                  <tr key={i} className={m.uncertain ? "bg-amber-light/40" : ""}>
                     <td><input className="input-field py-1.5" value={m.name} onChange={(e) => updateMed(i, "name", e.target.value)} /></td>
                     <td><input className="input-field py-1.5 w-20" type="number" value={m.quantity} onChange={(e) => updateMed(i, "quantity", parseInt(e.target.value))} /></td>
                     <td><input className="input-field py-1.5" type="date" value={m.expiry_date} onChange={(e) => updateMed(i, "expiry_date", e.target.value)} /></td>

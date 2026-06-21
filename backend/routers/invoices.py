@@ -77,11 +77,17 @@ def parse_invoice_text(text: str) -> List[dict]:
 @router.post("/upload")
 async def upload_invoice(
     facility_id: int = Form(...), invoice_type: str = Form("incoming"),
-    supplier_name: str = Form(""), raw_text: str = Form(...)
+    supplier_name: str = Form(""), structured_medicines: str = Form(...)
 ):
-    extracted = parse_invoice_text(raw_text)
+    import json
+    try:
+        extracted = json.loads(structured_medicines)
+        if not isinstance(extracted, list):
+            extracted = []
+    except Exception:
+        extracted = []
     return {
-        "raw_text": raw_text, "extracted_medicines": extracted,
+        "extracted_medicines": extracted,
         "facility_id": facility_id, "invoice_type": invoice_type,
         "supplier": supplier_name, "count": len(extracted)
     }
