@@ -86,8 +86,20 @@ async def upload_invoice(
         "supplier": supplier_name, "count": len(extracted)
     }
 
+from pydantic import BaseModel
+
+class ConfirmInvoiceRequest(BaseModel):
+    facility_id: int
+    invoice_type: str
+    supplier_name: str
+    medicines_data: List[dict]
+
 @router.post("/confirm")
-def confirm_invoice(facility_id: int, invoice_type: str, supplier_name: str, medicines_data: List[dict], db: Session = Depends(get_db)):
+def confirm_invoice(req: ConfirmInvoiceRequest, db: Session = Depends(get_db)):
+    facility_id = req.facility_id
+    invoice_type = req.invoice_type
+    supplier_name = req.supplier_name
+    medicines_data = req.medicines_data
     invoice = Invoice(facility_id=facility_id, invoice_type=invoice_type, supplier_name=supplier_name, invoice_date=date.today(), processed=True)
     db.add(invoice)
     db.flush()
