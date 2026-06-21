@@ -21,8 +21,8 @@ export default function InvoiceUpload() {
     setError(""); setLoading(true);
     try {
       const reader = new FileReader();
-      const base64 = await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result.split(",")[1]);
+      const dataUrl = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
@@ -31,18 +31,12 @@ export default function InvoiceUpload() {
 
       let aiResponse;
       try {
-        aiResponse = await window.puter.ai.chat(
-          [{ role: "user", content: [{ type: "text", text: promptText }, { type: "file", data: base64, mime_type: file.type }] }],
-          { model: "gpt-4o-mini" }
-        );
+        aiResponse = await window.puter.ai.chat(promptText, dataUrl, { model: "gpt-4o-mini" });
       } catch {
-        aiResponse = await window.puter.ai.chat(
-          [{ role: "user", content: [{ type: "text", text: promptText }, { type: "file", data: base64, mime_type: file.type }] }],
-          { model: "claude-sonnet-4-6" }
-        );
+        aiResponse = await window.puter.ai.chat(promptText, dataUrl, { model: "claude-sonnet-4-6" });
       }
 
-      const rawText = aiResponse?.message?.content?.[0]?.text || String(aiResponse) || "";
+      const rawText = typeof aiResponse === "string" ? aiResponse : (aiResponse?.message?.content?.[0]?.text || aiResponse?.text || String(aiResponse) || "");
 
       const fd = new FormData();
       fd.append("raw_text", rawText);
