@@ -38,7 +38,7 @@ export default function InvoiceUpload() {
       } catch {
         aiResponse = await window.puter.ai.chat(
           [{ role: "user", content: [{ type: "text", text: promptText }, { type: "file", data: base64, mime_type: file.type }] }],
-          { model: "claude-3-5-haiku" }
+          { model: "claude-sonnet-4-6" }
         );
       }
 
