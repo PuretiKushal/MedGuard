@@ -31,7 +31,7 @@ export default function Dashboard() {
       <div className="flex items-start justify-between mb-7">
         <div>
           <div className="label mb-1">Dashboard</div>
-          <h1 className="font-serif font-semibold text-2xl text-ink">Good morning, {user?.name?.split(" ")[0]}</h1>
+          <h1 className="font-serif font-semibold text-2xl text-ink">Good morning, Doctor!</h1>
           <div className="text-sm text-ink-faded mt-1">{facility?.name} · {today}</div>
         </div>
         <Link to="/facility/alerts" className="btn-outline text-xs">View full report →</Link>
