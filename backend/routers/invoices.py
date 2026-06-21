@@ -3,15 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db, Invoice, Medicine
 from scheduler import calculate_expiry_status
 from ai_services import normalize_medicine_name
-import pytesseract
-import pytesseract
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
-from PIL import Image
-import pdf2image
-import io
 import re
-import os
-import tempfile
 from datetime import datetime, date
 from typing import List
 
@@ -40,8 +32,7 @@ def parse_date(date_str: str) -> date | None:
             continue
     return None
 
-def extract_text_from_image(image: Image.Image) -> str:
-    return pytesseract.image_to_string(image, config="--psm 6")
+
 
 def parse_invoice_text(text: str) -> List[dict]:
     medicines = []
@@ -86,30 +77,11 @@ def parse_invoice_text(text: str) -> List[dict]:
 @router.post("/upload")
 async def upload_invoice(
     facility_id: int = Form(...), invoice_type: str = Form("incoming"),
-    supplier_name: str = Form(""), file: UploadFile = File(...)
+    supplier_name: str = Form(""), raw_text: str = Form(...)
 ):
-    contents = await file.read()
-    images = []
-
-    if file.filename.lower().endswith(".pdf"):
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(contents)
-            tmp_path = tmp.name
-        try:
-            images = pdf2image.convert_from_path(tmp_path, dpi=200)
-        finally:
-            os.unlink(tmp_path)
-    else:
-        images = [Image.open(io.BytesIO(contents))]
-
-    full_text = ""
-    for img in images:
-        full_text += extract_text_from_image(img) + "\n"
-
-    extracted = parse_invoice_text(full_text)
-
+    extracted = parse_invoice_text(raw_text)
     return {
-        "raw_text": full_text, "extracted_medicines": extracted,
+        "raw_text": raw_text, "extracted_medicines": extracted,
         "facility_id": facility_id, "invoice_type": invoice_type,
         "supplier": supplier_name, "count": len(extracted)
     }
