@@ -20,16 +20,41 @@ export default function InvoiceUpload() {
     if (!file) { setError("Please select a file first."); return; }
     setError(""); setLoading(true);
     try {
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const promptText = "Read this medicine invoice or prescription image and extract all visible text exactly as written, including medicine names, quantities, dates and batch numbers. Return only the raw extracted text, nothing else.";
+
+      let aiResponse;
+      try {
+        aiResponse = await window.puter.ai.chat(
+          [{ role: "user", content: [{ type: "text", text: promptText }, { type: "file", data: base64, mime_type: file.type }] }],
+          { model: "gpt-4o-mini" }
+        );
+      } catch {
+        aiResponse = await window.puter.ai.chat(
+          [{ role: "user", content: [{ type: "text", text: promptText }, { type: "file", data: base64, mime_type: file.type }] }],
+          { model: "claude-3-5-haiku" }
+        );
+      }
+
+      const rawText = aiResponse?.message?.content?.[0]?.text || String(aiResponse) || "";
+
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("raw_text", rawText);
       fd.append("facility_id", user.facility_id);
       fd.append("invoice_type", invoiceType);
       fd.append("supplier_name", supplier);
       const res = await uploadInvoice(fd);
       setEditedMeds(res.data.extracted_medicines || []);
       setStep(1);
-    } catch {
-      setError("OCR processing failed. Please try again.");
+    } catch (err) {
+      console.error(err);
+      setError("AI reading failed. Please try again or add medicines manually.");
     } finally {
       setLoading(false);
     }
@@ -102,7 +127,7 @@ export default function InvoiceUpload() {
           <div className="card p-5">
             <div className="label mb-3">How OCR works</div>
             <div className="space-y-2">
-              {["Your invoice is sent to Tesseract OCR running on the server", "Text is extracted and parsed to identify the medicine table", "Names are AI-cleaned and matched to generics where possible", "You review and correct before anything is saved to inventory"].map((s, i) => (
+              {["Your invoice image is read directly by AI in your browser", "Text is extracted and parsed to identify the medicine table", "Names are AI-cleaned and matched to generics where possible", "You review and correct before anything is saved to inventory"].map((s, i) => (
                 <div key={i} className="flex items-start gap-3 text-xs text-ink-faded font-mono"><span className="text-green mt-0.5">{i + 1}.</span><span>{s}</span></div>
               ))}
             </div>
