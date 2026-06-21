@@ -1,9 +1,6 @@
 from database import SessionLocal, Medicine, Alert, Facility, ExpiryStatus, PatientNotification
 from datetime import date, datetime
 from sqlalchemy.orm import Session
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from twilio.rest import Client
 import os
 from dotenv import load_dotenv
@@ -86,10 +83,10 @@ def send_whatsapp_alert(facility, medicines, alert_type, summary=None):
 
 def send_email_alert(facility, medicines, alert_type, summary=None):
     try:
-        gmail_user = os.getenv("GMAIL_USER")
-        gmail_password = os.getenv("GMAIL_APP_PASSWORD")
-        if not all([gmail_user, gmail_password, facility.email]):
-            print(f"Email skipped for {facility.name} — missing Gmail config or facility.email")
+        sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+        sender_email = os.getenv("SENDGRID_SENDER_EMAIL")
+        if not all([sendgrid_api_key, sender_email, facility.email]):
+            print(f"Email skipped for {facility.name} — missing SendGrid config or facility.email")
             return
         subject = f"MedGuard {'CRITICAL' if alert_type == 'critical' else 'WARNING'} Alert — {facility.name}"
         rows = "".join([
@@ -111,14 +108,11 @@ def send_email_alert(facility, medicines, alert_type, summary=None):
         <p style='margin-top:20px;color:#888;font-size:12px'>MedGuard — Medicine Expiry & Waste Alert System</p>
         </body></html>
         """
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = gmail_user
-        msg["To"] = facility.email
-        msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(gmail_user, gmail_password)
-            server.sendmail(gmail_user, facility.email, msg.as_string())
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+        message = Mail(from_email=sender_email, to_emails=facility.email, subject=subject, html_content=html)
+        sg = SendGridAPIClient(sendgrid_api_key)
+        sg.send(message)
         print(f"Email alert sent to {facility.name}")
     except Exception as e:
         print(f"Email error for {facility.name}: {e}")
