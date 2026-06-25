@@ -76,7 +76,10 @@ def send_whatsapp_alert(facility, medicines, alert_type, summary=None):
             message += f"📋 *{len(medicines)} medicine(s) expiring within 60 days:*\n\n"
         message += med_list
         message += f"\n\nGenerated: {datetime.now().strftime('%d %b %Y, %I:%M %p')}"
-        client.messages.create(body=message, from_=from_number, to=f"whatsapp:{facility.admin_whatsapp}")
+        phone = facility.admin_whatsapp.strip().replace(" ", "").replace("-", "")
+        if not phone.startswith("+"):
+            phone = "+91" + phone.lstrip("0")
+        client.messages.create(body=message, from_=from_number, to=f"whatsapp:{phone}")
         print(f"WhatsApp alert sent to {facility.name}")
     except Exception as e:
         print(f"WhatsApp error for {facility.name}: {e}")
