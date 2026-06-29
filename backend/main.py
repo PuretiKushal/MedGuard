@@ -4,6 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from contextlib import asynccontextmanager
 import uvicorn
 
+
 from database import engine, Base
 from routers import facilities, medicines, invoices, alerts, patient, auth
 from scheduler import run_daily_expiry_check
@@ -43,6 +44,7 @@ app.include_router(patient.router, prefix="/api/patient", tags=["Patient"])
 @app.get("/")
 def root():
     return {"message": "MedGuard API is running", "version": "1.0.0"}
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
